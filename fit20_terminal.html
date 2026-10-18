@@ -1,0 +1,618 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FIT 20 Years — System Boot</title>
+
+<style>
+:root {
+    --orange: #ff6a00;
+    --gold: #ffb347;
+    --white: #f5f7fa;
+    --bg: #07090e;
+    --muted: #777f8e;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    width: 100%;
+    min-height: 100vh;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: var(--bg);
+    color: var(--white);
+    font-family: "Courier New", monospace;
+}
+
+/* DIGITAL BACKGROUND */
+
+.background {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background:
+        radial-gradient(ellipse at 50% 45%,
+            rgba(255, 106, 0, .13), transparent 55%),
+        linear-gradient(rgba(255,255,255,.025) 1px,
+            transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px,
+            transparent 1px),
+        #07090e;
+    background-size: auto, 40px 40px, 40px 40px, auto;
+}
+
+.background::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 3px,
+        rgba(0,0,0,.22) 4px
+    );
+    pointer-events: none;
+}
+
+.background::after {
+    content: "";
+    position: absolute;
+    width: 70vw;
+    height: 70vw;
+    left: 15%;
+    top: 10%;
+    border: 1px solid rgba(255,106,0,.09);
+    border-radius: 50%;
+    box-shadow:
+        0 0 0 70px rgba(255,106,0,.025),
+        0 0 0 140px rgba(255,106,0,.02);
+    animation: rotate 35s linear infinite;
+}
+
+@keyframes rotate {
+    to { transform: rotate(360deg); }
+}
+
+/* TERMINAL */
+
+.stage {
+    position: relative;
+    width: min(1050px, 90vw);
+    z-index: 2;
+}
+
+.terminal {
+    position: relative;
+    padding: clamp(22px, 4vw, 42px);
+    background: rgba(8, 10, 15, .94);
+    border: 1px solid rgba(255,106,0,.65);
+    border-radius: 10px;
+    box-shadow:
+        0 0 15px rgba(255,106,0,.12),
+        0 0 65px rgba(255,106,0,.08),
+        inset 0 0 45px rgba(255,106,0,.025);
+    overflow: hidden;
+}
+
+.terminal::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 2px;
+    width: 100%;
+    background: linear-gradient(
+        90deg, transparent, var(--orange), var(--gold), transparent
+    );
+    box-shadow: 0 0 15px var(--orange);
+}
+
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid rgba(255,255,255,.1);
+    color: var(--muted);
+    font-size: clamp(9px, 1.2vw, 13px);
+    letter-spacing: 2px;
+}
+
+.lights {
+    display: flex;
+    gap: 7px;
+}
+
+.light {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--orange);
+    box-shadow: 0 0 8px rgba(255,106,0,.6);
+}
+
+.light:nth-child(2) { opacity: .55; }
+.light:nth-child(3) { opacity: .25; }
+
+.brand {
+    color: var(--white);
+    font-weight: bold;
+}
+
+.status {
+    color: var(--orange);
+}
+
+/* CODE LOGS */
+
+.logs {
+    min-height: 155px;
+    padding: 25px 0 18px;
+    font-size: clamp(11px, 1.5vw, 16px);
+    line-height: 1.9;
+}
+
+.log {
+    opacity: 0;
+    transform: translateX(-8px);
+    animation: logIn .3s ease forwards;
+}
+
+@keyframes logIn {
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.time { color: #656d7b; }
+.ok { color: #ffad66; }
+.info { color: #c5cbd5; }
+.accent { color: var(--orange); }
+
+.command {
+    min-height: 42px;
+    margin: 8px 0 25px;
+    color: var(--white);
+    font-size: clamp(15px, 2.2vw, 25px);
+    font-weight: bold;
+    overflow-wrap: anywhere;
+}
+
+.prompt {
+    color: var(--orange);
+    margin-right: 12px;
+}
+
+.cursor {
+    display: inline-block;
+    width: 10px;
+    height: 1.1em;
+    vertical-align: -3px;
+    margin-left: 5px;
+    background: var(--orange);
+    animation: blink .7s steps(2, start) infinite;
+}
+
+@keyframes blink {
+    to { visibility: hidden; }
+}
+
+/* LOADING BAR */
+
+.loading-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 12px;
+    font-size: clamp(10px, 1.3vw, 14px);
+    letter-spacing: 2px;
+}
+
+.loading-title { color: #aab0bc; }
+
+#percent {
+    color: var(--orange);
+    font-weight: bold;
+}
+
+.track {
+    height: 13px;
+    background: #191b21;
+    border: 1px solid #39302b;
+    overflow: hidden;
+}
+
+.fill {
+    height: 100%;
+    width: 0%;
+    position: relative;
+    background: linear-gradient(
+        90deg, #a93600, var(--orange), #ffd0a3
+    );
+    box-shadow: 0 0 18px var(--orange);
+}
+
+.fill::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 45px;
+    height: 100%;
+    background: white;
+    opacity: .8;
+    filter: blur(8px);
+}
+
+.metrics {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: clamp(9px, 1.1vw, 12px);
+}
+
+/* FINAL TITLE */
+
+.final {
+    display: none;
+    padding: 20px 0 10px;
+    text-align: center;
+}
+
+.final.show {
+    display: block;
+    animation: reveal .8s ease both;
+}
+
+@keyframes reveal {
+    from { opacity: 0; transform: scale(.94); filter: blur(8px); }
+    to { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+
+.final-label {
+    color: var(--orange);
+    font-size: clamp(10px, 1.4vw, 15px);
+    letter-spacing: 6px;
+    margin-bottom: 14px;
+}
+
+.final h1 {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    font-size: clamp(38px, 8vw, 88px);
+    font-weight: 900;
+    letter-spacing: -3px;
+    line-height: 1;
+    color: white;
+    text-shadow: 0 0 35px rgba(255,106,0,.25);
+}
+
+.final h1 span {
+    color: var(--orange);
+}
+
+.final-sub {
+    margin-top: 20px;
+    font-family: Arial, sans-serif;
+    font-size: clamp(11px, 1.8vw, 19px);
+    letter-spacing: clamp(2px, .6vw, 7px);
+    color: #c4c7ce;
+}
+
+.final-tag {
+    margin-top: 35px;
+    font-size: clamp(10px, 1.4vw, 14px);
+    color: var(--orange);
+    letter-spacing: 3px;
+}
+
+.footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding-top: 20px;
+    margin-top: 20px;
+    border-top: 1px solid rgba(255,255,255,.1);
+    color: #59616f;
+    font-size: 10px;
+    letter-spacing: 1px;
+}
+
+/* CONTROLS */
+
+.controls {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 22px;
+    opacity: .7;
+    transition: opacity .2s;
+}
+
+.controls:hover { opacity: 1; }
+
+button {
+    padding: 10px 16px;
+    color: var(--white);
+    background: #11141b;
+    border: 1px solid #373b45;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+button:hover {
+    border-color: var(--orange);
+    color: var(--orange);
+}
+
+@media (max-width: 600px) {
+    .stage { width: 94vw; }
+    .terminal { padding: 20px; }
+    .logs { min-height: 135px; }
+    .footer { font-size: 8px; }
+    .background { background-size: auto, 25px 25px, 25px 25px, auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="background"></div>
+
+<main class="stage">
+    <section class="terminal">
+
+        <header class="topbar">
+            <div class="lights">
+                <span class="light"></span>
+                <span class="light"></span>
+                <span class="light"></span>
+            </div>
+
+            <div class="brand">FIT // SYSTEM TERMINAL</div>
+            <div class="status" id="status">INITIALIZING</div>
+        </header>
+
+        <div class="logs" id="logs"></div>
+
+        <div class="command">
+            <span class="prompt">&gt;</span><span id="typed"></span><span
+                class="cursor" id="cursor"></span>
+        </div>
+
+        <div id="loading">
+            <div class="loading-header">
+                <span class="loading-title">COMPILING LEGACY MODULE</span>
+                <span id="percent">000%</span>
+            </div>
+
+            <div class="track">
+                <div class="fill" id="fill"></div>
+            </div>
+
+            <div class="metrics">
+                <span id="phase">LOADING CORE...</span>
+                <span>FIT_20Y.exe</span>
+                <span id="elapsed">00:00:00</span>
+            </div>
+        </div>
+
+        <div class="final" id="final">
+            <div class="final-label">SYSTEM BUILD COMPLETE</div>
+            <h1>FIT <span>20</span></h1>
+            <div class="final-sub">INHERIT THE LEGACY</div>
+            <div class="final-sub">BREAK THROUGH THE FUTURE</div>
+            <div class="final-tag">#FIT20nam</div>
+        </div>
+
+        <footer class="footer">
+            <span>FACULTY OF INFORMATION TECHNOLOGY</span>
+            <span id="build">BUILD 2026.20</span>
+        </footer>
+
+    </section>
+
+    <div class="controls">
+        <button id="replay">↻ REPLAY</button>
+        <button id="fullscreen">⛶ FULLSCREEN</button>
+    </div>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+
+const commands = [
+    "compile FIT_20years...",
+    "loading legacy_modules...",
+    "building the next generation..."
+];
+
+const logMessages = [
+    ["00.120", "BOOT_SEQUENCE", "INITIALIZED"],
+    ["00.480", "LEGACY_MODULE", "20 YEARS DETECTED"],
+    ["00.820", "CORE_VALUES", "PASSION // KNOWLEDGE // UNITY"],
+    ["01.200", "FUTURE_BUILD", "READY TO COMPILE"]
+];
+
+let timers = [];
+let runId = 0;
+
+function later(fn, ms) {
+    const id = setTimeout(fn, ms);
+    timers.push(id);
+    return id;
+}
+
+function clearTimers() {
+    timers.forEach(clearTimeout);
+    timers = [];
+}
+
+function addLog(item, index) {
+    const line = document.createElement("div");
+    line.className = "log";
+    line.style.animationDelay = (index * .04) + "s";
+
+    const time = document.createElement("span");
+    time.className = "time";
+    time.textContent = "[" + item[0] + "] ";
+
+    const name = document.createElement("span");
+    name.className = "accent";
+    name.textContent = item[1];
+
+    const result = document.createElement("span");
+    result.className = "ok";
+    result.textContent = " // " + item[2];
+
+    line.append(time, name, result);
+    $("logs").appendChild(line);
+}
+
+function typeText(text, speed, done, token) {
+    let i = 0;
+    $("typed").textContent = "";
+
+    function step() {
+        if (token !== runId) return;
+
+        if (i < text.length) {
+            $("typed").textContent += text.charAt(i);
+            i++;
+            later(step, speed + Math.random() * 35);
+        } else if (done) {
+            later(() => done(token), 250);
+        }
+    }
+
+    step();
+}
+
+function startLoading(token) {
+    let progress = 0;
+    const duration = 2600;
+    const start = performance.now();
+
+    function frame(now) {
+        if (token !== runId) return;
+
+        const t = Math.min((now - start) / duration, 1);
+
+        // Fast start, smooth finish
+        progress = Math.floor(100 * (1 - Math.pow(1 - t, 2.2)));
+
+        $("percent").textContent =
+            String(progress).padStart(3, "0") + "%";
+
+        $("fill").style.width = progress + "%";
+
+        const seconds = Math.floor((now - start) / 1000);
+        $("elapsed").textContent =
+            "00:00:0" + Math.min(seconds, 9);
+
+        if (progress < 100) {
+            requestAnimationFrame(frame);
+        } else {
+            later(() => finish(token), 350);
+        }
+    }
+
+    requestAnimationFrame(frame);
+}
+
+function finish(token) {
+    if (token !== runId) return;
+
+    $("status").textContent = "BUILD SUCCESS";
+    $("status").style.color = "#ffb347";
+    $("phase").textContent = "ALL MODULES COMPILED";
+    $("cursor").style.display = "none";
+    $("loading").style.display = "none";
+
+    const success = document.createElement("div");
+    success.className = "log";
+    success.style.marginTop = "12px";
+    success.innerHTML =
+        '<span class="accent">[SUCCESS]</span> ' +
+        '<span class="ok">BUILD SUCCESSFUL — 0 ERRORS</span>';
+
+    $("logs").appendChild(success);
+
+    later(() => {
+        if (token !== runId) return;
+        $("logs").style.display = "none";
+        $("final").classList.add("show");
+    }, 500);
+}
+
+function play() {
+    clearTimers();
+    runId++;
+    const token = runId;
+
+    $("logs").replaceChildren();
+    $("logs").style.display = "block";
+    $("typed").textContent = "";
+    $("cursor").style.display = "inline-block";
+    $("loading").style.display = "block";
+    $("final").classList.remove("show");
+    $("final").style.display = "";
+    $("fill").style.width = "0%";
+    $("percent").textContent = "000%";
+    $("phase").textContent = "LOADING CORE...";
+    $("elapsed").textContent = "00:00:00";
+    $("status").textContent = "INITIALIZING";
+    $("status").style.color = "";
+    $("loading").style.opacity = "1";
+
+    logMessages.forEach((item, i) => {
+        later(() => {
+            if (token === runId) addLog(item, i);
+        }, 200 + i * 360);
+    });
+
+    later(() => {
+        typeText(commands[0], 65, () => {
+            $("phase").textContent = "COMPILING...";
+            startLoading(token);
+        }, token);
+    }, 350);
+}
+
+$("replay").addEventListener("click", play);
+
+$("fullscreen").addEventListener("click", async () => {
+    try {
+        if (!document.fullscreenElement) {
+            await document.documentElement.requestFullscreen();
+        } else {
+            await document.exitFullscreen();
+        }
+    } catch (e) {
+        alert("Hãy bật chế độ toàn màn hình bằng phím F11.");
+    }
+});
+
+play();
+</script>
+
+</body>
+</html>
